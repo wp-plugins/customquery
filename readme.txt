@@ -1,12 +1,12 @@
 === Plugin Name ===
 Contributors: Arnan de Gans
 Donate link: http://meandmymac.net/donate/
-Tags: plugin, admin, database, plugin, query 
+Tags: plugin, admin, database, plugin, query, edit, update, create, mysql, dashboard
 Requires at least: 2.5
 Tested up to: 2.6
 Stable tag: 0.1
 
-A worthless plugin doing worthless stuff with features not worth mentioning.
+Review and edit your database without the need of PhpMyAdmin, all right from the dashboard!
 
 == Description ==
 
