@@ -4,7 +4,7 @@ Donate link: http://meandmymac.net/donate/
 Tags: plugin, admin, database, plugin, query, edit, update, create, mysql, dashboard
 Requires at least: 2.5
 Tested up to: 2.6
-Stable tag: 0.1
+Stable tag: 0.2
 
 Review and edit your database without the need of PhpMyAdmin, all right from the dashboard!
 
@@ -17,6 +17,7 @@ Review your database, read out your tables and see what’s going on. Easily run c
 * Easy installation
 * Review database tables without editing them
 * Run custom queries on databases
+* Perform simple maintenance tasks on your database or individual tables
 
 == Installation ==
 

@@ -2,9 +2,9 @@
 /*
 Plugin Name: CustomQuery
 Plugin URI: http://meandmymac.net/plugins/
-Description: Database queries for the rest of us...
+Description: MySQL for the rest of us...
 Author: Arnan de Gans
-Version: 0.1
+Version: 0.2
 Author URI: http://meandmymac.net
 */ 
 
@@ -22,7 +22,7 @@ add_action('admin_menu', 'cq_menu_pages');
 -------------------------------------------------------------*/
 function cq_menu_pages() {
 	add_submenu_page('plugins.php', 'Query - CustomQuery', 'Query', 10, 'customquery', 'cq_query');
-	add_submenu_page('plugins.php', 'Database - CustomQuery', 'Database', 10, 'customquery2', 'cq_database');
+	add_submenu_page('plugins.php', 'Tables - CustomQuery', 'Tables', 10, 'customquery2', 'cq_tables');
 }
 
 /*-------------------------------------------------------------
@@ -83,22 +83,63 @@ function cq_query() {
  Receive:   -none-
  Return:    -none-
 -------------------------------------------------------------*/
-function cq_database() {
+function cq_tables() {
 	global $wpdb;
 	
 	$tablename = $_GET['cq_table'];
+	$optimize = $_GET['cq_optimize'];
+	$optimize_all = $_GET['cq_optimize_all'];
+	$drop = $_GET['cq_drop'];
+	$truncate = $_GET['cq_truncate'];
 	$pluginurl = get_option('home')."/wp-admin/plugins.php?page";
-?>
+	
+	if(strlen($optimize) != 0) {  
+		if($wpdb->query("OPTIMIZE TABLE `$optimize`") !== FALSE) { // success
+			echo "<div id=\"message\" class=\"updated fade\"><p>Table <strong>optimized</strong></p></div>";
+		} else { // failure
+			echo "<div id=\"message\" class=\"updated fade\"><p>Table optimization <strong>Failed</strong><br /><br /><strong>Error:</strong> ".str_replace("You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near", "Check your syntax near:", mysql_error())."</p></div>";
+		}
+	}
+	if(strlen($optimize_all) != 0) {
+		$result = mysql_query("SHOW TABLES FROM ".DB_NAME) or die('Cannot get tables');  
+		while($table = mysql_fetch_row($result)) {  
+			mysql_query('OPTIMIZE TABLE '.$table[0]) or die('Cannot optimize '.$table[0]);  
+		}  
+		echo "<div id=\"message\" class=\"updated fade\"><p>Database <strong>optimized</strong></p></div>";
+	}  
+	if(strlen($drop) != 0) {  
+		if($wpdb->query("DROP TABLE `$drop`") !== FALSE) { // success
+			echo "<div id=\"message\" class=\"updated fade\"><p>Table <strong>deleted</strong></p></div>";
+		} else { // failure
+			echo "<div id=\"message\" class=\"updated fade\"><p>Table deletion <strong>Failed</strong><br /><br /><strong>Error:</strong> ".str_replace("You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near", "Check your syntax near:", mysql_error())."</p></div>";
+		}
+	}
+	if(strlen($truncate) != 0) {  
+		if($wpdb->query("TRUNCATE `$truncate`") !== FALSE) { // success
+			echo "<div id=\"message\" class=\"updated fade\"><p>Table <strong>emptied</strong></p></div>";
+		} else { // failure
+			echo "<div id=\"message\" class=\"updated fade\"><p>Emptying table <strong>Failed</strong><br /><br /><strong>Error:</strong> ".str_replace("You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near", "Check your syntax near:", mysql_error())."</p></div>";
+		}
+	}
+	?>
 	<div class="wrap">
-	  	<h2>CustomQuery - Database</h2>
+	  	<h2>CustomQuery - Tables</h2>
+	  	
+	  	<p>Here you can perform some simple tasks on your database and review the table scructures</p>
 
-    	<table class="form-table">
-			<tr valign="top">
-				<td colspan="4" bgcolor="#DDD">This page lists all available database tables and allows you to review them in an orderly manner.</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Tables:</th>
-		        <td>
+  		<form method="post" action="<?php echo $_SERVER['REQUEST_URI'];?>">
+		  	<table class="widefat">
+		  		<thead>
+					<tr valign="top">
+						<td><?php if(!empty($tablename)) { ?>Currently browsing: <?php } else { ?>Select a table!<?php } ?></td>
+						<td><?php if(!empty($tablename)) { echo $tablename; } ?></td>
+						<td width="7%">&nbsp;</td>
+						<td width="7%">&nbsp;</td>
+						<td width="15%">&nbsp;</td>
+						<td width="15%">&nbsp;</td>
+					</tr>
+				</thead>
+	 	  		<tbody>
 	<?php
 	$tables = mysql_query("SHOW TABLES FROM ".DB_NAME);
 	
@@ -106,36 +147,35 @@ function cq_database() {
 		echo "<tr><td colspan=\"6\"><span style=\"color:#f00; font-weight:bold;\">Could not list tables:<br />" . mysql_error() . "</span></td></tr>";
 	}
 	
+	echo "<tr><td colspan=\"6\">";	
 	while ($table = mysql_fetch_row($tables)) {
 		if($tablename != $table[0]) {
 	    	echo "<a href=\"$pluginurl=customquery2&cq_table=$table[0]\">$table[0]</a> ";
 		} else {
-			echo "$table[0] ";
+			echo "<strong>$table[0]</strong> ";
 		}
 	}
+	echo "</td></tr>";
 	
-	mysql_free_result($tables);
-	?>
-				</td>
-			</tr>
-		</table>
-	<?php 
+	if(empty($tablename)) { 
+	echo "<tr><td colspan=\"6\"><strong>Options:</strong> ";
+	echo "<a href=\"$pluginurl=customquery2&amp;cq_optimize_all=yes\" style=\"color: #f00;\" onclick=\"return confirm('Are you sure you want to OPTIMIZE ALL tables?')\">Optimize database</a>";
+	echo "</td></tr>";
+	}
+	
 	if(!empty($tablename)) { 
 	?>
-	  	<table class="form-table">
-			<tr valign="top">
-				<td colspan="6" bgcolor="#DDD"><strong>You are currently viewing: <?php echo $tablename; ?></strong></td>
-			</tr>
-			<tr>
-				<td bgcolor="#EEE">Field name</td>
-				<td bgcolor="#EEE">Data type</td>
-				<td width="7%" bgcolor="#EEE">Null</td>
-				<td width="7%" bgcolor="#EEE">Key</td>
-				<td width="15%" bgcolor="#EEE">Default</td>
-				<td width="15%" bgcolor="#EEE">Extra</td>
-			</tr>
+					<tr>
+						<td bgcolor="#EEE">Field name</td>
+						<td bgcolor="#EEE">Data type</td>
+						<td bgcolor="#EEE">Null</td>
+						<td bgcolor="#EEE">Key</td>
+						<td bgcolor="#EEE">Default</td>
+						<td bgcolor="#EEE">Extra</td>
+					</tr>
+
 	<?php
-		$fields = mysql_query("SHOW COLUMNS FROM $tablename");
+		$fields = mysql_query("SHOW COLUMNS FROM `$tablename`");
 		if (!$fields) {
 		    echo "<tr><td colspan=\"6\"><span style=\"color:#f00; font-weight:bold;\">Could not run query:<br />" . mysql_error() . "</span></td></tr>";
 		} else {
@@ -152,17 +192,22 @@ function cq_database() {
 			    }
 			}
 ?>
-		        </td>
-			</tr>
-			<tr>
-				<td bgcolor="#EEE">Field name</td>
-				<td bgcolor="#EEE">Data type</td>
-				<td bgcolor="#EEE">Null</td>
-				<td bgcolor="#EEE">Key</td>
-				<td bgcolor="#EEE">Default</td>
-				<td bgcolor="#EEE">Extra</td>
-			</tr>
-
+				<tr>
+					<td bgcolor="#EEE">Field name</td>
+					<td bgcolor="#EEE">Data type</td>
+					<td bgcolor="#EEE">Null</td>
+					<td bgcolor="#EEE">Key</td>
+					<td bgcolor="#EEE">Default</td>
+					<td bgcolor="#EEE">Extra</td>
+			    </tr>
+			    <tr>
+			        <td colspan="6"><strong>Options:</strong> 
+			        <a href="<?php echo $pluginurl;?>=customquery2&amp;cq_drop=<?php echo $tablename;?>" style="color: #f00;" onclick="return confirm('Are you sure you want to DELETE this table?\nThis action is irreversible!')">Drop</a>, 
+					<a href="<?php echo $pluginurl;?>=customquery2&amp;cq_optimize=<?php echo $tablename;?>&cq_table=<?php echo $tablename;?>" style="color: #f00;" onclick="return confirm('Are you sure you want to OPTIMIZE this table?')">Optimize</a>,
+					<a href="<?php echo $pluginurl;?>=customquery2&amp;cq_truncate=<?php echo $tablename;?>&cq_table=<?php echo $tablename;?>" style="color: #f00;" onclick="return confirm('Are you sure you want to EMPTY this table?')">Truncate</a>
+					</td>
+				</tr>
+			</tbody>
 <?php
 		}
 	}
