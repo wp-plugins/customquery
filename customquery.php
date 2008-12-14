@@ -4,7 +4,7 @@ Plugin Name: CustomQuery
 Plugin URI: http://meandmymac.net/plugins/
 Description: MySQL for the rest of us...
 Author: Arnan de Gans
-Version: 0.2
+Version: 0.3
 Author URI: http://meandmymac.net
 */ 
 
@@ -21,8 +21,8 @@ add_action('admin_menu', 'cq_menu_pages');
  Return:    -none-
 -------------------------------------------------------------*/
 function cq_menu_pages() {
-	add_submenu_page('plugins.php', 'Query - CustomQuery', 'Query', 10, 'customquery', 'cq_query');
-	add_submenu_page('plugins.php', 'Tables - CustomQuery', 'Tables', 10, 'customquery2', 'cq_tables');
+	add_submenu_page('plugins.php', 'Query - CustomQuery', 'Run Query', 'edit_plugins', 'customquery', 'cq_query');
+	add_submenu_page('plugins.php', 'Tables - CustomQuery', 'View Tables', 'edit_plugins', 'customquery2', 'cq_tables');
 }
 
 /*-------------------------------------------------------------
@@ -35,38 +35,45 @@ function cq_menu_pages() {
 function cq_query() {
 	global $wpdb;
 	
-	if(isset($_POST['cq_submit_query'])) { // query submitted
-		$cq_query = stripslashes(trim($_POST['cq_query'], "\t\n "));
-		$buffer = explode(' ', $cq_query, 2);
-		
-		$allowed = array("INSERT", "UPDATE", "DELETE", "ALTER", "DROP", "CREATE");
-		if(empty($cq_query)) { // empty query 
-			echo "<div id=\"message\" class=\"updated fade\"><p>Query cannot be <strong>Empty</strong></p></div>";			
-		} else if(in_array(strtoupper($buffer[0]), $allowed)) { // proceed
-			if($wpdb->query($cq_query) !== FALSE) { // success
-				echo "<div id=\"message\" class=\"updated fade\"><p>Query <strong>Successful</strong><br/><br/><strong>Query:</strong> $cq_query</p></div>";
-			} else { // failure
-				echo "<div id=\"message\" class=\"updated fade\"><p>Query <strong>Failed</strong><br /><br /><strong>Error:</strong> ".str_replace("You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near", "Check your syntax near:", mysql_error())."<br /><br /><strong>Query:</strong> $cq_query</p></div>";
-			}
-		} else { // illegal query
-			echo "<div id=\"message\" class=\"updated fade\"><p>Query <strong>Failed</strong><br /><br/><strong>'$buffer[0]'</strong> is not allowed in this plugin!<br /><br/><strong>Query:</strong> $cq_query</p></div>";
-		}
-	}
 ?>
 	<div class="wrap">
-	  	<h2>CustomQuery - Query</h2>
-	  	<form method="post" action="<?php echo $_SERVER['REQUEST_URI'];?>">
+	  	<h2>Run Query</h2>
+	  	
+		<?php 
+		if(isset($_POST['cq_submit_query'])) { // query submitted
+			$cq_query = stripslashes(trim($_POST['cq_query'], "\t\n "));
+			$buffer = explode(' ', $cq_query, 2);
+			
+			$allowed = array("INSERT", "UPDATE", "DELETE", "ALTER", "DROP", "CREATE");
+			if(empty($cq_query)) { // empty query 
+				echo "<div id=\"message\" class=\"updated fade\"><p>Query cannot be <strong>Empty</strong></p></div>";			
+			} else if(in_array(strtoupper($buffer[0]), $allowed)) { // proceed
+				if($wpdb->query($cq_query) !== FALSE) { // success
+					echo "<div id=\"message\" class=\"updated fade\"><p>Query <strong>Successful</strong><br/><br/><strong>Query:</strong> $cq_query</p></div>";
+				} else { // failure
+					echo "<div id=\"message\" class=\"updated fade\"><p>Query <strong>Failed</strong><br /><br /><strong>Error:</strong> ".str_replace("You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near", "Check your syntax near:", mysql_error())."<br /><br /><strong>Query:</strong> $cq_query</p></div>";
+				}
+			} else { // illegal query
+				echo "<div id=\"message\" class=\"updated fade\"><p>Query <strong>Failed</strong><br /><br/><strong>'$buffer[0]'</strong> is not allowed in this plugin!<br /><br/><strong>Query:</strong> $cq_query</p></div>";
+			}
+		} 
+		?>
+	  	<form method="post" action="plugins.php?page=customquery">
 	    	<input type="hidden" name="cq_submit_query" value="true" />
 
-	    	<table class="form-table">
-			<tr valign="top">
-				<td colspan="4" bgcolor="#DDD"><span style="color:#f00; font-weight:bold;">WARNING: Use this page with caution! If you do not know what to do, don't use it!<br />
-				THIS CAN AND POSSIBLY WILL BREAK YOUR WEBSITE IF YOU DO IT WRONG! <u>ALWAYS MAKE A BACKUP!</u></span></td>
-			</tr>
-			<tr valign="top">
-				<th scope="row">Query:</th>
-		        <td><textarea name="cq_query" type="text" cols="70" rows="12"></textarea><br /><em>Use this field for insert/update/delete/alter/drop queries only!</em></td>
-			</tr>
+			<table class="widefat" style="margin-top: .5em">
+	  			<thead>
+	  				<tr valign="top" id="quicktags">
+						<td colspan="2"><span style="color:#f00; font-weight:bold;">WARNING: Use this page with caution! If you do not know what to do, don't use it!<br />
+						THIS CAN AND POSSIBLY WILL BREAK YOUR WEBSITE IF YOU DO IT WRONG! <u>ALWAYS MAKE A BACKUP!</u></div></td>
+					</tr>
+	  			</thead>
+	  			<tbody>
+					<tr>
+						<th scope="row">Query:</th>
+				        <td><textarea name="cq_query" type="text" cols="70" rows="12"></textarea><br /><em>Use this field for insert/update/delete/alter/drop queries only!</em></td>
+					</tr>
+	 			</tbody>
 			</table>
 			<p class="submit">
 				<input type="submit" name="Submit" value="Run Query" onclick="return confirm('You are about to run a query on your database!\nMake absolutely sure the query is correct!\n')"/> <em>Click only ONCE, some queries might take a few moments or so to process!</em>
@@ -92,7 +99,10 @@ function cq_tables() {
 	$drop = $_GET['cq_drop'];
 	$truncate = $_GET['cq_truncate'];
 	$pluginurl = get_option('home')."/wp-admin/plugins.php?page";
-	
+?>
+	<div class="wrap">
+	  	<h2>View Tables</h2>
+<?php
 	if(strlen($optimize) != 0) {  
 		if($wpdb->query("OPTIMIZE TABLE `$optimize`") !== FALSE) { // success
 			echo "<div id=\"message\" class=\"updated fade\"><p>Table <strong>optimized</strong></p></div>";
@@ -122,15 +132,12 @@ function cq_tables() {
 		}
 	}
 	?>
-	<div class="wrap">
-	  	<h2>CustomQuery - Tables</h2>
-	  	
 	  	<p>Here you can perform some simple tasks on your database and review the table scructures</p>
 
   		<form method="post" action="<?php echo $_SERVER['REQUEST_URI'];?>">
 		  	<table class="widefat">
 		  		<thead>
-					<tr valign="top">
+					<tr valign="top" id="quicktags">
 						<td><?php if(!empty($tablename)) { ?>Currently browsing: <?php } else { ?>Select a table!<?php } ?></td>
 						<td><?php if(!empty($tablename)) { echo $tablename; } ?></td>
 						<td width="7%">&nbsp;</td>
