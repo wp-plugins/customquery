@@ -3,7 +3,7 @@ Contributors: Arnan de Gans
 Donate link: http://meandmymac.net/donate/
 Tags: plugin, admin, database, plugin, query, edit, update, create, mysql, dashboard
 Requires at least: 2.5, PHP5.3
-Tested up to: 2.9
+Tested up to: 3.3.2
 Stable tag: 0.4
 
 Review and edit your database without the need of PhpMyAdmin, all right from the dashboard!
